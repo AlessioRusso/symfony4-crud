@@ -14,7 +14,7 @@ class ToDoListController extends AbstractController
      */
     public function index()
     {
-        return $this->render('index.html.twig');
+        return $this->redirectToRoute('tasks');
     }
 
     /**
@@ -31,10 +31,10 @@ class ToDoListController extends AbstractController
 
         $em = $this->getDoctrine()->getManager();
         
-        $task = new Task;
+        $task = new Task();
 
         $task->setTitle($title);
-        $task->setStatus(false);
+        $task->setStatus(False);
 
         $em->persist($task);
 
@@ -48,14 +48,37 @@ class ToDoListController extends AbstractController
      */
     public function switchStatus($id)
     {
-        exit('to do: switch status'.$id);
+        $em = $this->getDoctrine()->getManager();
+        $task = $em->getRepository(Task::class)->find($id);
+        dump($task);
+        $task->setStatus(!$task->getStatus());
+
+        $em->persist($task);
+        $em->flush();
+
+        return $this->redirectToRoute('to_do_list');
     }
 
     /**
      * @Route("/delete/{id}", name="delete_task")
      */
-    public function delete($id)
+    public function delete(Task $task) # this is param converter in symf
     {
-        exit('to do: delete a task '.$id);
+       $em = $this->getDoctrine()->getManager();
+       $em->remove($task);
+       $em->flush();
+       return $this->redirectToRoute('to_do_list');
+    }
+
+
+    /**
+     * @Route("/tasks", name="tasks")
+     */
+    public function tasks()
+    {
+        $tasks = $this->getDoctrine()->getRepository(Task::class)->findBy([], ['id' => 'DESC']);
+        return $this->render('index.html.twig', [
+            'tasks' => $tasks,
+        ]);
     }
 }
